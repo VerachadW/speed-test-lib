@@ -152,6 +152,13 @@ public class SpeedTestSocket {
             }
 
             isReading = true;
+            for (int i = 0; i < speedTestListenerList.size(); i++) {
+                if (isDownload) {
+                    speedTestListenerList.get(i).onDownloadStart();
+                } else {
+                    speedTestListenerList.get(i).onUploadStart();
+                }
+            }
             readingThread = new Thread(new Runnable() {
 
                 @Override
@@ -201,8 +208,13 @@ public class SpeedTestSocket {
                             while ((read = socket.getInputStream().read(buffer)) != -1) {
                                 totalPackets += read;
                                 step = totalPackets * 100 / frameLength;
+                                long timeNow = System.currentTimeMillis();
+
+                                float currentBitRate = calculateTransferRate(frameLength, timeStart, timeNow, true);
+                                float currentOctetRate = calculateTransferRate(frameLength, timeStart, timeNow, false);
+
                                 for (int i = 0; i < speedTestListenerList.size(); i++) {
-                                    speedTestListenerList.get(i).onDownloadProgress(step);
+                                    speedTestListenerList.get(i).onDownloadProgress(step, currentBitRate, currentOctetRate);
                                 }
                                 if (totalPackets == frameLength) {
                                     break;
@@ -210,8 +222,8 @@ public class SpeedTestSocket {
                             }
                             timeEnd = System.currentTimeMillis();
 
-                            float transferRate_bps = (frameLength * 8) / ((timeEnd - timeStart) / 1000f);
-                            float transferRate_Bps = frameLength / ((timeEnd - timeStart) / 1000f);
+                            float transferRate_bps = calculateTransferRate(frameLength, timeStart, timeEnd, true);
+                            float transferRate_Bps = calculateTransferRate(frameLength, timeStart, timeEnd, false);
 
                             for (int i = 0; i < speedTestListenerList.size(); i++) {
                                 speedTestListenerList.get(i).onDownloadPacketsReceived(frameLength, transferRate_bps, transferRate_Bps);
@@ -244,9 +256,8 @@ public class SpeedTestSocket {
                                     if (frame.getStatusCode() == 200 && frame.getReasonPhrase().toLowerCase().equals("ok")) {
 
                                         timeEnd = System.currentTimeMillis();
-                                        float transferRate_bps = (uploadFileSize * 8) / ((timeEnd - timeStart) / 1000f);
-                                        float transferRate_Bps = uploadFileSize / ((timeEnd - timeStart) / 1000f);
-
+                                        float transferRate_bps = calculateTransferRate(uploadFileSize, timeStart, timeEnd, true);
+                                        float transferRate_Bps = calculateTransferRate(uploadFileSize, timeStart, timeEnd, false);
                                         for (int i = 0; i < speedTestListenerList.size(); i++) {
                                             speedTestListenerList.get(i).onUploadPacketsReceived(uploadFileSize, transferRate_bps, transferRate_Bps);
                                         }
@@ -279,6 +290,13 @@ public class SpeedTestSocket {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private float calculateTransferRate(int fileSize, long startTime, long endTime, boolean asBitRate) {
+        if (asBitRate) {
+            fileSize = fileSize * 8;
+        }
+        return fileSize / ((endTime - startTime) / 1000f);
     }
 
     /**
@@ -366,16 +384,24 @@ public class SpeedTestSocket {
                             for (int i = 0; i < 100; i++) {
                                 socket.getOutputStream().write(Arrays.copyOfRange(body, temp, temp + step));
                                 socket.getOutputStream().flush();
+
+                                long timeNow = System.currentTimeMillis();
+                                float currentBitRate = calculateTransferRate(temp + step, timeStart, timeNow, true);
+                                float currentOctetRates = calculateTransferRate(temp + step, timeStart, timeNow, false);
+
                                 for (int j = 0; j < speedTestListenerList.size(); j++) {
-                                    speedTestListenerList.get(j).onUploadProgress(i);
+                                    speedTestListenerList.get(j).onUploadProgress(i, currentBitRate, currentOctetRates);
                                 }
                                 temp += step;
                             }
                             if (remain != 0) {
                                 socket.getOutputStream().write(Arrays.copyOfRange(body, temp, temp + remain));
                                 socket.getOutputStream().flush();
+                                long timeNow = System.currentTimeMillis();
+                                float currentBitRate = calculateTransferRate(temp + step, timeStart, timeNow, true);
+                                float currentOctetRates = calculateTransferRate(temp + step, timeStart, timeNow, false);
                                 for (int j = 0; j < speedTestListenerList.size(); j++) {
-                                    speedTestListenerList.get(j).onUploadProgress(100);
+                                    speedTestListenerList.get(j).onUploadProgress(100, currentBitRate, currentOctetRates);
                                 }
                             }
                         }

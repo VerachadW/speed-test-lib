@@ -94,25 +94,29 @@ public class SpeedTest {
 			}
 
 			@Override
-			public void onDownloadProgress(int percent) {
-				if (!initDownloadBar)
-					System.out.print("download progress | < ");
-				initDownloadBar = true;
+			public void onDownloadProgress(int percent, float transferRateBitPerSeconds, float transferRateOctetPerSeconds) {
 				if (percent % 4 == 0)
-					System.out.print("=");
+				System.out.println("current upload transfer rate  : " + transferRateOctetPerSeconds / 1000000 + " Moctet/second");
 				if (percent == 100)
 					System.out.println(" 100%");
 			}
 
 			@Override
-			public void onUploadProgress(int percent) {
-				if (!initUploadBar)
-					System.out.print("upload progress | < ");
-				initUploadBar = true;
+			public void onUploadProgress(int percent, float transferRateBitPerSeconds, float transferRateOctetPerSeconds) {
 				if (percent % 5 == 0)
-					System.out.print("=");
+				System.out.println("current upload transfer rate  : " + transferRateOctetPerSeconds / 1000000 + " Moctet/second");
 				if (percent == 100)
-					System.out.println(" 100%");
+					System.out.println("Upload completed: 100%");
+			}
+
+			@Override
+			public void onDownloadStart() {
+				System.out.println("Start downloading");
+			}
+
+			@Override
+			public void onUploadStart() {
+				System.out.println("Start uploading");
 			}
 		});
 

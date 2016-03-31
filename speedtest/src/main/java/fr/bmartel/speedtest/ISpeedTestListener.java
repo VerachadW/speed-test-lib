@@ -57,7 +57,7 @@ public interface ISpeedTestListener {
      * @param percent
      *            % of progress
      */
-    public void onDownloadProgress(int percent);
+    public void onDownloadProgress(int percent, float transferRateBitPerSeconds, float transferRateOctetPerSeconds);
 
     /**
      * Error catch for download process
@@ -97,6 +97,9 @@ public interface ISpeedTestListener {
      * @param percent
      *            % of progress
      */
-    public void onUploadProgress(int percent);
+    public void onUploadProgress(int percent, float transferRateBitPerSeconds, float transferRateOctetPerSeconds);
+
+    void onDownloadStart();
+    void onUploadStart();
 
 }
